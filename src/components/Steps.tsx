@@ -1,43 +1,38 @@
 import React, { useState } from 'react';
-import './Steps.css'
+import './Steps.css';
 
 interface DistanceData {
-  date: Date;
+  date: string;
   distance: number;
 }
 
 const Steps: React.FC = () => {
-  const defaultDistances: DistanceData[] = [
-    { date: new Date('2020-07-19'), distance: 5.7 },
-    { date: new Date('2019-07-19'), distance: 14.2 },
-    { date: new Date('2019-07-18'), distance: 3.4 },
-  ];
-  const [distances, setDistances] = useState<DistanceData[]>(defaultDistances);
-  const [newDate, setNewDate] = useState<Date | null>(null);
-  const [newDistance, setNewDistance] = useState<number | null>(null);
+  const [distances, setDistances] = useState<DistanceData[]>([]);
+  const [newDate, setNewDate] = useState<string>('');
+  const [newDistance, setNewDistance] = useState<number | ''>('');
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewDate(new Date(event.target.value));
+    setNewDate(event.target.value);
   };
 
   const handleDistanceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewDistance(Number(event.target.value));
+    setNewDistance(event.target.value as number | '');
   };
 
   const handleAddDistance = () => {
-    if (newDate && newDistance !== null) {
-      const existingIndex = distances.findIndex((item) => item.date.toDateString() === newDate.toDateString());
+    if (newDate && newDistance !== '') {
+      const existingIndex = distances.findIndex((item) => item.date === newDate);
 
       if (existingIndex !== -1) {
         const updatedDistances = [...distances];
-        updatedDistances[existingIndex].distance += newDistance;
+        updatedDistances[existingIndex].distance += Number(newDistance);
         setDistances(updatedDistances);
       } else {
-        setDistances([...distances, { date: newDate, distance: newDistance }]);
+        setDistances([...distances, { date: newDate, distance: Number(newDistance) }]);
       }
 
-      setNewDate(null);
-      setNewDistance(null);
+      setNewDate('');
+      setNewDistance('');
     }
   };
 
@@ -46,31 +41,41 @@ const Steps: React.FC = () => {
     setDistances(updatedDistances);
   };
 
-  const sortedDistances = distances.sort((a, b) => b.date.getTime() - a.date.getTime());
+  const sortedDistances = [...distances].sort((a, b) => {
+    return new Date(b.date.split('.').reverse().join('-')).getTime() - new Date(a.date.split('.').reverse().join('-')).getTime();
+  });
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleAddDistance();
+    }
+  };
 
   return (
     <>
       <div className='title'>
-        <h4>Дата (ДД.ММ.ГГ.)</h4>
+        <h4>Дата (ДД.ММ.ГГГГ)</h4>
         <h4>Пройдено км</h4>
       </div>
       <form className='input'>
-        <input className='input-date' type="date" value={(newDate && newDate.toISOString().slice(0, 10)) || ''} onChange={handleDateChange} />
-        <input className='input-distance' type="number" value={newDistance || ''} onChange={handleDistanceChange} placeholder='Дистанция' />
-        <button className='btn' type="button" onClick={handleAddDistance}>ОК</button>
+        <input type="text" value={newDate} onChange={handleDateChange} onKeyDown={handleKeyDown} />
+        <input type="number" step="0.1" value={newDistance} onChange={handleDistanceChange} onKeyDown={handleKeyDown} />
+        <button type="button" onClick={handleAddDistance}>Добавить</button>
       </form>
       <div className='title-result'>
-        <p style={{ paddingRight: '10px' }}>Дата (ДД.ММ.ГГ.)</p><p style={{ paddingRight: '10px' }}>Пройдено км</p><p style={{ paddingRight: '10px' }}>Действия</p>
+        <p style={{ paddingRight: '10px' }}>Дата (ДД.ММ.ГГГГ)</p><p style={{ paddingRight: '10px' }}>Пройдено км</p><p style={{ paddingRight: '10px' }}>Действия</p>
       </div>
       <div className='output'>
         {sortedDistances.map((item, index) => (
           <div key={index}>
-            <span style={{ marginRight: '70px' }}>{item.date.toLocaleDateString()}</span>
+            <span style={{ marginRight: '70px' }}>{item.date}</span>
             <span style={{ marginRight: '70px' }}>{item.distance}</span>
             <span onClick={() => handleRemoveDistance(index)} style={{ cursor: 'pointer' }}>✎ ✘</span>
           </div>
         ))}
       </div>
     </>
-  )}
+  );
+};
+
 export default Steps;
